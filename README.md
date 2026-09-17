@@ -17,8 +17,10 @@ tick-safe, and stable.
 
 ## Installation
 
-1. Install Fabric API for Minecraft 26.3.
-2. Drop the `Timberfall-v*-mc26.3-Fabric.jar` into your `mods/` folder.
+The mod installs on the server — either a dedicated server or the
+integrated server of single-player. Put the
+`Timberfall-v*-mc26.3-Fabric.jar` into the server's `mods/` folder
+together with Fabric API for Minecraft 26.3.
 
 ## Configuration
 
