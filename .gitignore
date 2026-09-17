@@ -37,3 +37,4 @@ replay_*.log
 *.jfr
 /org.eclipse.buildship.core.prefs
 *.log.*
+/opencode.json
