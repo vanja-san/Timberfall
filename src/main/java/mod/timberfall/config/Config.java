@@ -3,7 +3,7 @@ package mod.timberfall.config;
 /**
  * Runtime configuration for Timberfall.
  *
- * <p>All gameplay knobs live here. Values are persisted as JSON and can be
+ * <p>All gameplay knobs live here. Values are persisted as JSON5 and can be
  * changed without recompiling the mod.
  */
 public final class Config {
@@ -68,9 +68,6 @@ public final class Config {
 	 */
 	public boolean leafDecayNearestTrunk = true;
 
-	/** Search depth used when updating leaf distances after a chop. */
-	public int leafDecaySearchAttempts = 8;
-
 	/** Maximum leaves that drop in a single server tick after a chop. */
 	public int leafDecayPerTick = 64;
 
@@ -85,7 +82,6 @@ public final class Config {
 		radiusLimit = Math.max(1, radiusLimit);
 		blocksPerTick = Math.max(1, blocksPerTick);
 		speedLimitConnectedLogs = Math.max(1, speedLimitConnectedLogs);
-		leafDecaySearchAttempts = Math.max(1, leafDecaySearchAttempts);
 		leafDecayPerTick = Math.max(1, leafDecayPerTick);
 		breakSpeedFactor = Math.max(0.0f, Math.min(1.0f, breakSpeedFactor));
 	}

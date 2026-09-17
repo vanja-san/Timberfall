@@ -24,8 +24,16 @@ together with Fabric API for Minecraft 26.3.
 
 ## Configuration
 
-Created on first launch at `config/timberfall.json`. All values are
-clamped to safe ranges on load, so a hand-edited file cannot break the mod.
+Created on first launch at `config/timberfall.json5`. A `timberfall.json` from
+an older version is read once and re-saved in the new format. The file is plain
+JSON: comments, trailing commas, single quotes and unquoted keys are accepted
+on load and stripped on the next save, so the file stays as small as the
+settings themselves. Every value is clamped to a safe range on load, so a
+hand-edited file cannot break the mod.
+
+There is no in-game configuration screen — a GUI would have to run on the
+client, while Timberfall is installed on the server. Edit the file and restart
+the server.
 
 ## License
 

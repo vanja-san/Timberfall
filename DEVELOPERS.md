@@ -23,8 +23,10 @@ src/main/resources
 - `chop/ChopPlanner` – deterministic tree detection bounded by limits.
 - `leaf/LeafDecayEngine` – recomputes leaf distances with two multi-source
   BFS runs; leaf drops are rate-limited to `leafDecayPerTick` per tick.
-- `config/ConfigManager` – loads/saves `config/timberfall.json`, clamps
-  every value via `sanitize()`.
+- `config/Config` – plain settings holder; `config/ConfigManager` loads/saves
+  `config/timberfall.json5` through `config/Json5`, which tolerates
+  hand-written JSON5 and re-writes clean JSON, then clamps every value via
+  `sanitize()`.
 
 ## Build
 
