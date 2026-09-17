@@ -24,9 +24,8 @@ src/main/resources
 - `leaf/LeafDecayEngine` – recomputes leaf distances with two multi-source
   BFS runs; leaf drops are rate-limited to `leafDecayPerTick` per tick.
 - `config/Config` – plain settings holder; `config/ConfigManager` loads/saves
-  `config/timberfall.json5` through `config/Json5`, which tolerates
-  hand-written JSON5 and re-writes clean JSON, then clamps every value via
-  `sanitize()`.
+  `config/timberfall.json5` through `config/Json5`, writing one `@Comment`
+  description above each setting, then clamps every value via `sanitize()`.
 
 ## Build
 
@@ -53,4 +52,5 @@ The jar is named `build/libs/Timberfall-v<version>-mc<mc>-Fabric.jar`
 
 - No logging in the codebase; report failures by returning/ignoring.
 - Keep per-tick work bounded (chop batches, BFS caps, decay rate limit).
-- New gameplay knobs go into `Config` with a `sanitize()` clamp.
+- New gameplay knobs go into `Config` with a `@Comment` description and a
+  `sanitize()` clamp.

@@ -3,72 +3,69 @@ package mod.timberfall.config;
 /**
  * Runtime configuration for Timberfall.
  *
- * <p>All gameplay knobs live here. Values are persisted as JSON5 and can be
- * changed without recompiling the mod.
+ * <p>All gameplay knobs live here. Each field carries a {@link Comment} that is
+ * written above the matching entry in the JSON5 file, and every value is
+ * clamped by {@link #sanitize()} on load, so a hand-edited file can never break
+ * the mod.
  */
 public final class Config {
 
-	/** Master switch for the entire mod. */
+	@Comment("Master switch for the entire mod.")
 	public boolean enabled = true;
 
 	// ----- Chop criteria -------------------------------------------------
 
-	/** Require an axe in the main hand to trigger a tree chop. */
+	@Comment("Require an axe in the main hand to trigger a tree chop.")
 	public boolean requireAxe = true;
 
-	/** Sneaking prevents the auto-chop and performs a normal single-block break. */
+	@Comment("Sneaking prevents the auto-chop and performs a normal single-block break.")
 	public boolean sneakPreventsChopping = true;
 
-	/** Minimum connected logs for a group to be treated as a tree. */
+	@Comment("Minimum connected logs for a group to be treated as a tree.")
 	public int minLogsToChop = 2;
 
 	// ----- Chop limits ---------------------------------------------------
 
-	/** Maximum logs that may be removed per tree. */
+	@Comment("Maximum logs that may be removed per tree.")
 	public int maxLogsPerTree = 256;
 
-	/** Maximum distance above the broken block that is still considered part of the tree. */
+	@Comment("Maximum distance above the broken block that is still part of the tree.")
 	public int heightLimit = 64;
 
-	/** Maximum horizontal distance from the broken block for connected logs. */
+	@Comment("Maximum horizontal distance from the broken block for connected logs.")
 	public int radiusLimit = 6;
 
-	/** Logs removed every server tick while a chop is in progress. */
+	@Comment("Logs removed every server tick while a chop is in progress.")
 	public int blocksPerTick = 6;
 
-	/** Allow the full-tree chop in Creative mode. */
+	@Comment("Allow the full-tree chop in Creative mode.")
 	public boolean applyInCreative = true;
 
-	/** Consume durability from the used tool for each removed log. */
+	@Comment("Consume durability from the used tool for each removed log.")
 	public boolean damageTool = true;
 
 	// ----- Break speed ---------------------------------------------------
 
-	/** How strongly each connected log slows down the first block (0..1). */
+	@Comment("How strongly each connected log slows the first block down (0..1).")
 	public float breakSpeedFactor = 0.5f;
 
-	/** Upper bound of connected logs taken into account for the speed penalty. */
+	@Comment("Upper bound of connected logs counted for the speed penalty.")
 	public int speedLimitConnectedLogs = 64;
 
 	// ----- Sapling replant -----------------------------------------------
 
-	/** After a tree is felled, plant a matching sapling where the trunk stood. */
+	@Comment("After a tree is felled, plant a matching sapling where the trunk stood.")
 	public boolean autoPlantSapling = true;
 
 	// ----- Leaf decay ----------------------------------------------------
 
-	/** Enable the accelerated leaf decay after a tree is felled. */
+	@Comment("Enable the accelerated leaf decay after a tree is felled.")
 	public boolean instantLeafDecay = true;
 
-	/**
-	 * Assigns every leaf to the nearest trunk when canopies merge. A felled
-	 * tree drops exactly the leaves that were closer to its own logs, while
-	 * leaves leaning toward a surviving neighbouring tree stay. Disable for
-	 * the vanilla rule where any nearby log keeps every leaf alive.
-	 */
+	@Comment("Assign leaves to the nearest trunk when canopies merge; disable for the vanilla rule.")
 	public boolean leafDecayNearestTrunk = true;
 
-	/** Maximum leaves that drop in a single server tick after a chop. */
+	@Comment("Maximum leaves that drop in a single server tick after a chop.")
 	public int leafDecayPerTick = 64;
 
 	/**
