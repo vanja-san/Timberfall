@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "minecraft-modding_inspect-minecraft": {
+      "*": "allow"
+    },
+    "ddg-search_fetch_content": {
+      "*": "allow"
+    }
+  }
+}
