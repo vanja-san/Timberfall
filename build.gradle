@@ -1,5 +1,5 @@
 plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	alias(libs.plugins.fabric.loom)
 	id 'maven-publish'
 }
 
@@ -30,25 +30,26 @@ loom {
 dependencies {
 	// Minecraft 26.3 is shipped unobfuscated, so no mappings are configured and
 	// plain `implementation` is used instead of `modImplementation`.
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	minecraft libs.minecraft
+	implementation libs.fabric.loader
+	implementation libs.fabric.api
 }
 
 jar {
-	inputs.property "archivesName", project.base.archivesName
-	archiveFileName = "Timberfall-v${project.version}-mc${project.minecraft_version}-Fabric.jar"
+	archiveFileName = "Timberfall-v${project.version}-mc${libs.versions.minecraft.get()}-Fabric.jar"
 
+	def archivesName = project.base.archivesName.get()
 	from("LICENSE") {
-		rename { "${it}_${inputs.properties.archivesName}" }
+		rename { "${it}_${archivesName}" }
 	}
 }
 
 processResources {
-	inputs.property "version", project.version
+	def modVersion = project.version
+	inputs.property "version", modVersion
 
 	filesMatching("fabric.mod.json") {
-		expand "version": inputs.properties.version
+		expand "version": modVersion
 	}
 }
 
@@ -64,14 +65,6 @@ java {
 
 	sourceCompatibility = JavaVersion.VERSION_25
 	targetCompatibility = JavaVersion.VERSION_25
-}
-
-jar {
-	inputs.property "archivesName", project.base.archivesName
-
-	from("LICENSE") {
-		rename { "${it}_${inputs.properties.archivesName}" }
-	}
 }
 
 // configure the maven publication
