@@ -20,23 +20,6 @@ import net.minecraft.world.level.Level;
  */
 public final class ChopPlanner {
 
-	/** All 26 neighbours of a block (full 3x3x3 shell). */
-	private static final BlockPos[] NEIGHBOR_OFFSETS = new BlockPos[26];
-
-	static {
-		int i = 0;
-		for (int x = -1; x <= 1; x++) {
-			for (int y = -1; y <= 1; y++) {
-				for (int z = -1; z <= 1; z++) {
-					if (x == 0 && y == 0 && z == 0) {
-						continue;
-					}
-					NEIGHBOR_OFFSETS[i++] = new BlockPos(x, y, z);
-				}
-			}
-		}
-	}
-
 	private ChopPlanner() {
 	}
 
@@ -80,11 +63,10 @@ public final class ChopPlanner {
 				logs.add(pos);
 			}
 
-			for (BlockPos offset : NEIGHBOR_OFFSETS) {
+			// Check the geometric bounds and log-ness before marking the
+			// position visited, so the visited set stays small in dense areas.
+			for (BlockPos offset : BlockUtil.NEIGHBORS_3X3) {
 				BlockPos next = pos.offset(offset);
-				if (!visited.add(next)) {
-					continue;
-				}
 				int dy = next.getY() - origin.getY();
 				if (Math.abs(dy) > heightLimit) {
 					continue;
@@ -97,11 +79,13 @@ public final class ChopPlanner {
 				if (!BlockUtil.isLog(world.getBlockState(next))) {
 					continue;
 				}
-				frontier.add(next);
+				if (visited.add(next)) {
+					frontier.add(next);
+				}
 			}
 		}
 
-		return new ChopPlan(List.copyOf(logs));
+		return new ChopPlan(logs);
 	}
 
 	/** Counts connected logs but stops early, for use by the speed penalty. */
@@ -118,7 +102,7 @@ public final class ChopPlanner {
 			if (BlockUtil.isLog(world.getBlockState(pos))) {
 				count++;
 			}
-			for (BlockPos offset : NEIGHBOR_OFFSETS) {
+			for (BlockPos offset : BlockUtil.NEIGHBORS_3X3) {
 				BlockPos next = pos.offset(offset);
 				if (visited.add(next) && BlockUtil.isLog(world.getBlockState(next))) {
 					frontier.add(next);

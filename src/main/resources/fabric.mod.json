@@ -17,9 +17,6 @@
 	"entrypoints": {
 		"main": [
 			"mod.timberfall.Mod"
-		],
-		"client": [
-			"mod.timberfall.client.Client"
 		]
 	},
 	"mixins": [

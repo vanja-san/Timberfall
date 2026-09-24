@@ -60,13 +60,10 @@ public final class ChopManager {
 			return true;
 		}
 
-		ServerLevel serverLevel = (ServerLevel) world;
-		ChopPlanner.ChopPlan plan = ChopPlanner.plan(serverLevel, pos);
-		if (!plan.isTree()) {
-			return true;
-		}
-
-		if (player.isCreative() && !ConfigManager.get().applyInCreative) {
+		// Cheap checks first: the full-tree scan below is the only expensive
+		// step, so it must not run when the break will be a regular one anyway.
+		Config cfg = ConfigManager.get();
+		if (player.isCreative() && !cfg.applyInCreative) {
 			return true;
 		}
 
@@ -74,6 +71,12 @@ public final class ChopManager {
 		if (ACTIVE_TASKS.containsKey(serverPlayer.getUUID())) {
 			// Already chopping a tree; swallow this break to keep things predictable.
 			return false;
+		}
+
+		ServerLevel serverLevel = (ServerLevel) world;
+		ChopPlanner.ChopPlan plan = ChopPlanner.plan(serverLevel, pos);
+		if (!plan.isTree()) {
+			return true;
 		}
 
 		ACTIVE_TASKS.put(serverPlayer.getUUID(), new ChopTask(serverPlayer, serverLevel, pos, plan.logs()));
@@ -103,9 +106,11 @@ public final class ChopManager {
 		ServerLevel level = task.level();
 		ServerPlayer player = server.getPlayerList().getPlayer(task.playerId());
 
-		if (player == null || player.isRemoved() || !player.isAlive() || player.isSpectator()) {
-			return true;
-		}
+		// If the owner logged off, died or went into spectator, the chop must
+		// still be finished server-side so the tree does not stay half-felled
+		// with a floating canopy. Logs are then dropped plainly, without tool
+		// damage or player attribution.
+		boolean absent = player == null || player.isRemoved() || !player.isAlive() || player.isSpectator();
 
 		Config cfg = ConfigManager.get();
 		int brokenThisTick = 0;
@@ -114,7 +119,7 @@ public final class ChopManager {
 			if (pos == null) {
 				break;
 			}
-			if (breakLog(level, player, pos)) {
+			if (breakLog(level, absent ? null : player, pos, cfg)) {
 				task.recordRemoved(pos);
 				brokenThisTick++;
 			}
@@ -124,7 +129,7 @@ public final class ChopManager {
 			return false;
 		}
 
-		if (ConfigManager.get().autoPlantSapling) {
+		if (cfg.autoPlantSapling) {
 			ReplanterUtil.plant(level, task.origin(), task.sapling());
 		}
 
@@ -134,23 +139,24 @@ public final class ChopManager {
 	}
 
 	/**
-	 * Removes a single log block, producing its drops (unless Creative) and
-	 * damaging the tool. Players in survival are stopped only by {@code
-	 * damageTool} being enabled and the tool actually breaking.
+	 * Removes a single log block, producing its drops (unless Creative and
+	 * unless the owner is gone) and damaging the tool. Players in survival are
+	 * stopped only by {@code damageTool} being enabled and the tool actually
+	 * breaking. A {@code null} player means the owner abandoned the chop; the
+	 * log is then dropped plainly so the tree still falls completely.
 	 */
-	private static boolean breakLog(ServerLevel level, ServerPlayer player, BlockPos pos) {
+	private static boolean breakLog(ServerLevel level, @Nullable ServerPlayer player, BlockPos pos, Config cfg) {
 		BlockState state = level.getBlockState(pos);
 		if (!BlockUtil.isLog(state) || state.isAir()) {
 			return false;
 		}
 
-		Config cfg = ConfigManager.get();
-		boolean creative = player.isCreative();
-
-		if (!creative) {
+		if (player == null) {
+			Block.dropResources(state, level, pos);
+		} else if (!player.isCreative()) {
 			ItemStack item = player.getMainHandItem();
+			state.getBlock().playerDestroy(level, player, pos, state, level.getBlockEntity(pos), item);
 			if (cfg.damageTool && !item.isEmpty()) {
-				state.getBlock().playerDestroy(level, player, pos, state, level.getBlockEntity(pos), item);
 				EquipmentSlot slot = player.getEquipmentSlotForItem(item);
 				item.hurtAndBreak(1, player, slot);
 			}
@@ -165,8 +171,9 @@ public final class ChopManager {
 	}
 
 	/**
-	 * Whether breaking {@code state} should trigger a full-tree chop. The same
-	 * predicate drives the client-side cancel mixin so both sides stay in sync.
+	 * Whether breaking {@code state} should trigger a full-tree chop. Used by
+	 * the server break event; the client mirrors it via
+	 * {@link #shouldSuppressClientBreak} so both sides stay in sync.
 	 */
 	public static boolean canChopTree(Level world, Player player, BlockState state) {
 		if (world.isClientSide() || player.isSpectator()) {
@@ -192,6 +199,20 @@ public final class ChopManager {
 			return false;
 		}
 		return !cfg.sneakPreventsChopping || !player.isCrouching();
+	}
+
+	/**
+	 * Whether the client should suppress its local single-block break
+	 * prediction for this log. Mirrors the server's chop trigger as closely
+	 * as the client can know it (the {@code applyInCreative} gate included;
+	 * the tree-size scan stays a server decision), so a regular break that the
+	 * server will not turn into a chop keeps its instant local feedback.
+	 */
+	public static boolean shouldSuppressClientBreak(Player player, BlockState state) {
+		if (!shouldApplyBreakModifier(player, state)) {
+			return false;
+		}
+		return !player.isCreative() || ConfigManager.get().applyInCreative;
 	}
 
 	/**

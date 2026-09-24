@@ -19,13 +19,17 @@ src/main/resources
 ## Key modules
 
 - `chop/ChopManager` – queues one chop per player and advances it a few
-  logs per server tick.
+  logs per server tick. A chop whose owner logs off, dies or turns into a
+  spectator still finishes: remaining logs are dropped plainly, without tool
+  damage.
 - `chop/ChopPlanner` – deterministic tree detection bounded by limits.
 - `leaf/LeafDecayEngine` – recomputes leaf distances with two multi-source
   BFS runs; leaf drops are rate-limited to `leafDecayPerTick` per tick.
 - `config/Config` – plain settings holder; `config/ConfigManager` loads/saves
   `config/timberfall.json5` through `config/Json5`, writing one `@Comment`
   description above each setting, then clamps every value via `sanitize()`.
+  A clean file is never rewritten; corrupt files are quarantined to
+  `timberfall.json5.corrupt`.
 
 ## Build
 
@@ -41,12 +45,24 @@ The jar is named `build/libs/Timberfall-v<version>-mc<mc>-Fabric.jar`
 (see the `jar` block in `build.gradle`). Bump `mod_version` in
 `gradle.properties` before releasing.
 
+## Tests
+
+Unit tests live in `src/test/java` (JUnit 5, plain JVM — no Fabric runtime).
+They cover the pure config pipeline: `Json5` normalisation,
+`Config.sanitize()` clamping and `ConfigManager.render()` round-tripping
+through the real persistence format. New config-related logic should get a
+test here.
+
+```bash
+./gradlew test
+```
+
 ## Development
 
 - Compile both source sets: `./gradlew compileJava compileClientJava`
 - Run task naming and no mappings: check MC names directly against the
   unobfuscated 26.3 jar (via Loom caches).
-- CI builds on every push/PR in `.github/workflows/build.yml`.
+- CI builds and runs tests on every push/PR in `.github/workflows/build.yml`.
 
 ## Conventions
 

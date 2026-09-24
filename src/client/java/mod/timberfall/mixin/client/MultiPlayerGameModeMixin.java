@@ -18,8 +18,10 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Mirrors the server-side break-speed penalty on the client and prevents the
- * client from removing a single block itself while a chop is about to happen.
+ * Mirrors the server-side break-speed penalty on the client and suppresses
+ * the client's local single-block break prediction while a tree chop is about
+ * to happen, so the chopped tree is removed by the server's updates instead
+ * of flashing out locally block by block.
  */
 @Mixin(MultiPlayerGameMode.class)
 public class MultiPlayerGameModeMixin {
@@ -47,7 +49,7 @@ public class MultiPlayerGameModeMixin {
 			return;
 		}
 		BlockState state = minecraft.level.getBlockState(pos);
-		if (ChopManager.shouldApplyBreakModifier(player, state)) {
+		if (ChopManager.shouldSuppressClientBreak(player, state)) {
 			cir.setReturnValue(false);
 		}
 	}

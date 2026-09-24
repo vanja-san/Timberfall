@@ -31,14 +31,7 @@ public final class LeafDecayEngine {
 	private static final int MAX_UPDATED_LEAVES = 4096;
 
 	/** Six axis-aligned neighbours, used for both scans. */
-	private static final BlockPos[] NEIGHBOR_OFFSETS = new BlockPos[] {
-			new BlockPos(0, 0, -1),
-			new BlockPos(0, 0, 1),
-			new BlockPos(0, -1, 0),
-			new BlockPos(0, 1, 0),
-			new BlockPos(-1, 0, 0),
-			new BlockPos(1, 0, 0)
-	};
+	private static final BlockPos[] NEIGHBOR_OFFSETS = BlockUtil.NEIGHBORS_AXIS;
 
 	/** Leaves waiting to drop, drained on the server tick so the item spawns
 	 *  from a large chop stay flat instead of bursting all at once. */
@@ -87,7 +80,7 @@ public final class LeafDecayEngine {
 		Map<BlockPos, Integer> distanceToFelled = nearestTrunk
 				? distancesFromSources(world, blob, felledLogs)
 				: Map.of();
-		Set<BlockPos> remainingLogs = findAdjacentLogs(world, blob, felledLogs);
+		Set<BlockPos> remainingLogs = findAdjacentLogs(world, blob);
 		Map<BlockPos, Integer> distanceToRemaining = distancesFromSources(world, blob, remainingLogs);
 
 		for (BlockPos pos : blob) {
@@ -184,13 +177,16 @@ public final class LeafDecayEngine {
 		return distances;
 	}
 
-	/** Logs bordering the blob that are not part of the felled tree. */
-	private static Set<BlockPos> findAdjacentLogs(Level world, Set<BlockPos> blob, Set<BlockPos> excluded) {
+	/**
+	 * Logs bordering the blob that survived the chop (the felled logs are
+	 * already air by the time this runs, so no exclusion is needed).
+	 */
+	private static Set<BlockPos> findAdjacentLogs(Level world, Set<BlockPos> blob) {
 		Set<BlockPos> logs = new HashSet<>();
 		for (BlockPos pos : blob) {
 			for (BlockPos offset : NEIGHBOR_OFFSETS) {
 				BlockPos neighbor = pos.offset(offset);
-				if (!excluded.contains(neighbor) && BlockUtil.isLog(world.getBlockState(neighbor))) {
+				if (BlockUtil.isLog(world.getBlockState(neighbor))) {
 					logs.add(neighbor);
 				}
 			}
