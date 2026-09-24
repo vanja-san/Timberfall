@@ -21,15 +21,31 @@ src/main/resources
 - `chop/ChopManager` – queues one chop per player and advances it a few
   logs per server tick. A chop whose owner logs off, dies or turns into a
   spectator still finishes: remaining logs are dropped plainly, without tool
-  damage.
+  damage. `chainBreaking` (config) selects one-log-per-tick removal in the
+  planner's breadth-first scan order (chain reaction) or the configured batch
+  size with a top-down trunk order (instant). `constantChopSpeed` short-circuits
+  the connected-log penalty and the vanilla axe material to a fixed
+  per-block break time.
 - `chop/ChopPlanner` – deterministic tree detection bounded by limits.
+- `util/SaplingUtil` – resolves the replant sapling for a log: the vanilla
+  per-family item tags first, then `util/ModTreeSaplingMap`. That map is
+  built lazily once per game: it walks every `SaplingBlock` in the block
+  registry, reads its grower's feature lists (via the `SaplingBlockMixin`
+  and `TreeGrowerMixin` accessors) and resolves each feature key in the
+  `worldgen/feature` registry, reading the trunk block the feature places.
+  This makes modded trees replantable without any per-mod configuration.
+  MC 26.3 has no `ConfiguredFeature`/`TreeConfiguration` anymore – tree
+  features are plain `TreeFeature`/`FallenTreeFeature` instances exposing
+  their `trunkProvider` publicly.
 - `leaf/LeafDecayEngine` – recomputes leaf distances with two multi-source
   BFS runs; leaf drops are rate-limited to `leafDecayPerTick` per tick.
 - `config/Config` – plain settings holder; `config/ConfigManager` loads/saves
   `config/timberfall.json5` through `config/Json5`, writing one `@Comment`
   description above each setting, then clamps every value via `sanitize()`.
-  A clean file is never rewritten; corrupt files are quarantined to
-  `timberfall.json5.corrupt`.
+  A clean up-to-date file is never rewritten; corrupt files are quarantined
+  to `timberfall.json5.corrupt`. A schema marker in the header lets the mod
+  rebuild the file exactly once after an update adds new settings – bump
+  `ConfigManager.SCHEMA_VERSION` whenever `Config` grows new fields.
 
 ## Build
 

@@ -1,6 +1,7 @@
 package mod.timberfall.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.Gson;
@@ -13,7 +14,7 @@ class ConfigManagerRenderTest {
 	void renderContainsEverySettingWithACommentAbove() {
 		String rendered = ConfigManager.render(new Config());
 
-		assertTrue(rendered.startsWith("{\n"));
+		assertTrue(rendered.startsWith("// timberfall schema: " + ConfigManager.SCHEMA_VERSION + "\n{\n"));
 		assertTrue(rendered.trim().endsWith("}"));
 
 		for (java.lang.reflect.Field field : Config.class.getDeclaredFields()) {
@@ -25,7 +26,7 @@ class ConfigManagerRenderTest {
 		}
 
 		assertTrue(rendered.contains("// Master switch for the entire mod."));
-		assertTrue(rendered.contains("// Logs removed every server tick while a chop is in progress."));
+		assertTrue(rendered.contains("// Break logs one by one, rippling out from the chopped block. Disable to remove the tree in per-tick batches instead."));
 	}
 
 	@Test
@@ -43,5 +44,20 @@ class ConfigManagerRenderTest {
 		assertEquals(0.25f, parsed.breakSpeedFactor);
 		assertEquals(false, parsed.applyInCreative);
 		assertEquals(source.enabled, parsed.enabled);
+	}
+
+	@Test
+	void detectsSchemaVersionInHeaderComment() {
+		// Any file without a header is treated as schema 1 (first legacy layout).
+		assertEquals(1, ConfigManager.readSchemaVersion("{\n  \"enabled\": true\n}\n"));
+		assertEquals(1, ConfigManager.readSchemaVersion("// timberfall schema: nope\n{\n"));
+
+		// The current schema must be read back exactly.
+		assertEquals(ConfigManager.SCHEMA_VERSION,
+				ConfigManager.readSchemaVersion("// timberfall schema: " + ConfigManager.SCHEMA_VERSION + "\n{\n"));
+
+		// A schema newer than the mod knows must be detected so it is never rewritten.
+		assertEquals(7, ConfigManager.readSchemaVersion("// timberfall schema: 7\n{\n"));
+		assertNotEquals(ConfigManager.SCHEMA_VERSION, 7);
 	}
 }

@@ -27,6 +27,16 @@ import net.fabricmc.loader.api.FabricLoader;
  */
 public final class ConfigManager {
 
+	/**
+	 * Bumped whenever a mod release adds or renames a config setting. Files
+	 * written by an older schema are rebuilt once on load so the new setting
+	 * shows up; already-up-to-date files stay byte-for-byte untouched.
+	 */
+	static final int SCHEMA_VERSION = 3;
+
+	/** Header comment carrying the schema version (parsed by {@link #readSchemaVersion}). */
+	private static final String SCHEMA_MARKER = "// timberfall schema: ";
+
 	private static final Gson GSON = new Gson();
 
 	private static Config config = new Config();
@@ -78,6 +88,7 @@ public final class ConfigManager {
 		}
 
 		StringBuilder out = new StringBuilder();
+		out.append(SCHEMA_MARKER).append(SCHEMA_VERSION).append('\n');
 		out.append("{\n");
 
 		for (int i = 0; i < entries.size(); i++) {
@@ -118,18 +129,20 @@ public final class ConfigManager {
 		// left exactly as the user wrote it.
 		boolean write = json5 == null;
 
-		Path source = json5 != null ? json5 : legacy;
+Path source = json5 != null ? json5 : legacy;
 		if (source != null) {
 			try {
-				Config fromDisk = GSON.fromJson(Json5.toJson(Files.readString(source)), Config.class);
+				String text = Files.readString(source);
+				Config fromDisk = GSON.fromJson(Json5.toJson(text), Config.class);
 				if (fromDisk != null) {
 					loaded = fromDisk;
 					if (json5 != null) {
-						// Clean JSON5 was read: keep it byte-for-byte.
-						write = false;
+						// A clean up-to-date file is kept byte-for-byte, but a
+						// file from an older schema is rebuilt exactly once so
+						// newly added settings surface in the config. Values
+						// already chosen by the user are preserved.
+						write = readSchemaVersion(text) < SCHEMA_VERSION;
 					}
-					// Legacy migration keeps write=true so the new file is
-					// created once.
 				}
 			} catch (IOException | RuntimeException ignored) {
 				// Corrupt file: keep the user's text as a backup instead of
@@ -145,6 +158,27 @@ public final class ConfigManager {
 
 		if (write) {
 			save();
+		}
+	}
+
+	/** Reads the schema version from the header comment; legacy is 1. */
+	static int readSchemaVersion(String text) {
+		int idx = text.indexOf(SCHEMA_MARKER);
+		if (idx < 0) {
+			return 1;
+		}
+		String tail = text.substring(idx + SCHEMA_MARKER.length()).trim();
+		int end = 0;
+		while (end < tail.length() && Character.isDigit(tail.charAt(end))) {
+			end++;
+		}
+		if (end == 0) {
+			return 1;
+		}
+		try {
+			return Integer.parseInt(tail.substring(0, end));
+		} catch (NumberFormatException ignored) {
+			return 1;
 		}
 	}
 

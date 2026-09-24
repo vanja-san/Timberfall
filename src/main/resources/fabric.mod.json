@@ -12,7 +12,7 @@
 		"sources": "https://github.com/vanja-san/Timberfall"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/icon.png",
+	"icon": "assets/timberfall/modicon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [

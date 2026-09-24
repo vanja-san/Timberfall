@@ -35,7 +35,7 @@ public final class Config {
 	@Comment("Maximum horizontal distance from the broken block for connected logs.")
 	public int radiusLimit = 6;
 
-	@Comment("Logs removed every server tick while a chop is in progress.")
+	@Comment("Logs removed every server tick in instant mode (chainBreaking disabled).")
 	public int blocksPerTick = 6;
 
 	@Comment("Allow the full-tree chop in Creative mode.")
@@ -44,7 +44,13 @@ public final class Config {
 	@Comment("Consume durability from the used tool for each removed log.")
 	public boolean damageTool = true;
 
+	@Comment("Break logs one by one, rippling out from the chopped block. Disable to remove the tree in per-tick batches instead.")
+	public boolean chainBreaking = true;
+
 	// ----- Break speed ---------------------------------------------------
+
+	@Comment("Chop every log at the same fixed speed, ignoring tree size and axe material. Disabled by default.")
+	public boolean constantChopSpeed = false;
 
 	@Comment("How strongly each connected log slows the first block down (0..1).")
 	public float breakSpeedFactor = 0.5f;

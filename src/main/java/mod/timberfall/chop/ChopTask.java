@@ -17,29 +17,38 @@ import net.minecraft.world.level.block.Block;
  * player who started it and a record of everything already removed (needed
  * later for leaf decay).
  *
- * <p>Logs are processed top-down so leaves never float in the air for a
- * moment longer than necessary.
+ * <p>In chain mode the scan order (breadth-first from the chopped block) is
+ * kept, so the tree visibly cracks and falls one block at a time away from
+ * the point of impact. In instant mode logs are processed top-down so leaves
+ * never float in the air for a moment longer than necessary.
  */
 public final class ChopTask {
 
 	private final ServerLevel level;
 	private final UUID playerId;
-	private final BlockPos origin;
 	private final Block sapling;
+	private final List<BlockPos> replantSpots;
 	private final Deque<BlockPos> remainingLogs;
 	private final List<BlockPos> removedLogs = new ArrayList<>();
 	private final int totalLogs;
 
-	public ChopTask(ServerPlayer player, ServerLevel level, BlockPos origin, List<BlockPos> logs) {
+	/**
+	 * {@code chainOrder} selects the break order: {@code true} keeps the
+	 * breath-first scan order (chain reaction), {@code false} breaks the
+	 * trunk from top to bottom (instant mode).
+	 */
+	public ChopTask(ServerPlayer player, ServerLevel level, BlockPos origin, List<BlockPos> logs, boolean chainOrder) {
 		this.level = level;
 		this.playerId = player.getUUID();
-		this.origin = origin;
-		this.sapling = ReplanterUtil.saplingFor(level, origin);
+		this.sapling = ReplanterUtil.saplingFor(level, origin, logs);
+		this.replantSpots = ReplanterUtil.replantSpots(level, logs, origin);
 		this.totalLogs = logs.size();
 
-		List<BlockPos> sorted = new ArrayList<>(logs);
-		sorted.sort(Comparator.comparingInt((BlockPos pos) -> pos.getY()).reversed());
-		this.remainingLogs = new ArrayDeque<>(sorted);
+		List<BlockPos> ordered = new ArrayList<>(logs);
+		if (!chainOrder) {
+			ordered.sort(Comparator.comparingInt((BlockPos pos) -> pos.getY()).reversed());
+		}
+		this.remainingLogs = new ArrayDeque<>(ordered);
 	}
 
 	public ServerLevel level() {
@@ -50,13 +59,14 @@ public final class ChopTask {
 		return playerId;
 	}
 
-	public BlockPos origin() {
-		return origin;
-	}
-
 	/** The sapling to replant after this chop, or {@code null} if unknown. */
 	public Block sapling() {
 		return sapling;
+	}
+
+	/** One replant spot per trunk column of the planned tree. */
+	public List<BlockPos> replantSpots() {
+		return replantSpots;
 	}
 
 	public int totalLogs() {

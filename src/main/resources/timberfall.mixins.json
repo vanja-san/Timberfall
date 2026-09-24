@@ -4,7 +4,9 @@
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
 		"LeavesBlockMixin",
-		"ServerPlayerGameModeMixin"
+		"SaplingBlockMixin",
+		"ServerPlayerGameModeMixin",
+		"TreeGrowerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -40,6 +40,9 @@ public final class ChopManager {
 	/** Active chop per player. One at a time keeps the gameplay predictable. */
 	private static final Map<UUID, ChopTask> ACTIVE_TASKS = new HashMap<>();
 
+	/** Progress per tick for {@code constantChopSpeed}, so every log takes 4 ticks. */
+	private static final float FIXED_LOG_BREAK_PROGRESS = 0.25f;
+
 	private ChopManager() {
 	}
 
@@ -79,7 +82,8 @@ public final class ChopManager {
 			return true;
 		}
 
-		ACTIVE_TASKS.put(serverPlayer.getUUID(), new ChopTask(serverPlayer, serverLevel, pos, plan.logs()));
+		ACTIVE_TASKS.put(serverPlayer.getUUID(),
+				new ChopTask(serverPlayer, serverLevel, pos, plan.logs(), cfg.chainBreaking));
 		return false;
 	}
 
@@ -113,8 +117,13 @@ public final class ChopManager {
 		boolean absent = player == null || player.isRemoved() || !player.isAlive() || player.isSpectator();
 
 		Config cfg = ConfigManager.get();
+		// Chain mode breaks a single log per tick (starting at the chopped
+		// block and rippling outward with per-block particles and sound), so
+		// the tree visibly falls along the trunk. Instant mode clears the
+		// configured batch per tick instead.
+		int perTick = cfg.chainBreaking ? 1 : cfg.blocksPerTick;
 		int brokenThisTick = 0;
-		while (brokenThisTick < cfg.blocksPerTick) {
+		while (brokenThisTick < perTick) {
 			BlockPos pos = task.nextLog();
 			if (pos == null) {
 				break;
@@ -130,7 +139,7 @@ public final class ChopManager {
 		}
 
 		if (cfg.autoPlantSapling) {
-			ReplanterUtil.plant(level, task.origin(), task.sapling());
+			ReplanterUtil.plant(level, task.replantSpots(), task.sapling());
 		}
 
 		LeafDecayEngine.onLogsRemoved(level, task.removedLogs());
@@ -218,9 +227,20 @@ public final class ChopManager {
 	/**
 	 * Modifies the per-block destroy time so a large connected log group
 	 * takes proportionally longer to fell. Mirrored on client and server.
+	 *
+	 * <p>With {@code constantChopSpeed} enabled the connected-group scan and
+	 * the vanilla axe material no longer matter: every log breaks in the same
+	 * fixed amount of time.
 	 */
 	public static float modifyBlockBreakSpeed(float delta, Level world, BlockPos pos, Player player) {
 		Config cfg = ConfigManager.get();
+
+		if (cfg.constantChopSpeed) {
+			// Fixed progress per tick (≈ 4 ticks per log) regardless of tree
+			// size or axe grade. Also skips the connected-log BFS entirely.
+			return FIXED_LOG_BREAK_PROGRESS;
+		}
+
 		int connected = LogCountCache.count(world, pos, cfg.speedLimitConnectedLogs) - 1;
 		if (connected < 0) {
 			connected = 0;
